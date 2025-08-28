@@ -1,18 +1,17 @@
 # 環境ファイル
 .env
 
-# macOS 系
+# macOS 系の隠しファイル
 .DS_Store
 
 # 秘密鍵
 *.pem
 *.key
 
-# Terraform
-**/.terraform/            # プロバイダ実行バイナリ（重いので必ず除外）
-**/.terraform.lock.hcl    # ←これは逆に「コミット推奨」、なのでコメントアウト可
-**/*.tfstate              # state ファイル（機微情報が含まれるので除外）
-**/*.tfstate.*
-**/*.tfplan               # plan ファイルは都度生成されるので除外
-**/*.tfvars               # 秘密情報が入る可能性があるので除外
-!**/*.tfvars.example      # サンプルだけは共有したい場合
+# Terraform 実行環境関連
+**/.terraform/           # provider バイナリやキャッシュ（超大きいので必ず無視）
+**/*.tfstate             # state ファイル（機微情報入り）
+**/*.tfstate.*           # state のバックアップ
+**/*.tfplan              # plan ファイル（使い捨て）
+**/*.tfvars              # 環境ごとの秘密変数
+!**/*.tfvars.example     # サンプルだけは共有
