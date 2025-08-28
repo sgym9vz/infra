@@ -6,9 +6,9 @@ terraform {
       version = "~> 5.0"
     }
   }
+#  backend "s3" {}  # values are passed from CLI in the workflow
 }
 
 provider "aws" {
   region = var.aws_region
-  profile = var.aws_profile
 }
