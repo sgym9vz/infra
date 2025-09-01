@@ -1,5 +1,7 @@
 name: Terraform Pipeline (Plan on push, Apply manual)
 
+# このワークフローは通常のPlan/Apply用です
+
 concurrency:
   group: terraform-dev              # 同時実行を禁止（state壊れ防止）
   cancel-in-progress: false
@@ -12,11 +14,6 @@ on:
     branches: [ main ]                          # PRでもPlan（レビュー用）
     paths:    [ 'terraform/**' ]
   workflow_dispatch:
-    inputs:
-      reset_state:
-        description: 'Skip downloading previous tfstate (factory reset)'
-        required: false
-        type: boolean
 
 permissions:
   id-token: write                                # OIDCに必須
@@ -30,46 +27,45 @@ jobs:
         working-directory: terraform/env/dev
 
     steps:
+      # リポジトリのコードをチェックアウト
       - uses: actions/checkout@v4
 
-      # OIDCでAWS認証
+      # OIDCでAWS認証を設定
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::585008043652:role/github-actions-deploy-role
           aws-region: ap-northeast-1
 
+      # Terraformのセットアップ
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.7.5
 
+      # 既存のtfstateアーティファクトをダウンロード（reset_stateがtrueでない場合のみ）
       - name: Download tfstate artifact (dev)
-        if: ${{ inputs.reset_state != true }}
         uses: actions/download-artifact@v4
         with:
           name: terraform-state-dev       # ← 任意だが固定名にする
           path: terraform/env/dev         # ← working-directory と同じ
         continue-on-error: true           # 初回は存在しないのでOK
 
-      - name: Clean local tfstate when reset
-        if: ${{ inputs.reset_state == true }}
-        run: rm -f terraform.tfstate terraform.tfstate.backup || true
-
+      # Terraformの初期化
       - name: Terraform Init
         run: terraform init -input=false
 
-      # 余計な tfvars を消してから毎回作り直す
+      # 余計なtfvarsファイルを削除
       - name: Clean previous tfvars
         run: rm -f *.tfvars *.auto.tfvars || true
 
-      # dev.auto.tfvars を作成（base64デコード版）
+      # secretsからbase64エンコードされたdev.auto.tfvarsを作成
       - name: Write tfvars from secret (dev, base64)
         run: |
           rm -f dev.auto.tfvars || true
           printf "%s" "${{ secrets.TFVARS_DEV_B64 }}" | base64 -d > dev.auto.tfvars
 
-      # --- 自動で実行されるのは Plan まで ---
+      # Terraform Planを実行（自動実行はここまで）
       - name: Terraform Plan
         env:
           TF_IN_AUTOMATION: "true"   # CIでの実行を明示
@@ -83,12 +79,12 @@ jobs:
           name: tfplan
           path: tfplan
 
-      # --- Apply は workflow_dispatch で手動実行したときだけ ---
+      # Applyはworkflow_dispatchで手動実行したときのみ実行
       - name: Terraform Apply (manual only)
         if: github.event_name == 'workflow_dispatch'
         run: terraform apply -auto-approve tfplan
 
-      # tfstate をArtifactsへ保存（存在しない場合は警告のみ）
+      # tfstateをアーティファクトとして保存（存在しない場合は警告のみ）
       - name: Upload tfstate artifact (dev)
         if: always()
         uses: actions/upload-artifact@v4

@@ -1,0 +1,27 @@
+name: Terraform Reset State (dev)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform/env/dev
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Remove local tfstate
+        run: rm -f terraform.tfstate terraform.tfstate.backup || true
+
+      - name: Remove previous state artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-state-dev
+          path: /dev/null
+          if-no-files-found: ignore
+
+      - name: Done
+        run: echo "Terraform state reset complete."
