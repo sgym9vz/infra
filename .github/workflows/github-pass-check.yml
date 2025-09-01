@@ -17,3 +17,10 @@ jobs:
           ls -la
           echo "--- 2 levels ---"
           find . -maxdepth 2 -type d
+
+      - name: Show workspace
+        run: |
+          echo "GITHUB_WORKSPACE=${{ github.workspace }}"
+          echo "PWD=$(pwd)"
+          echo "--- top ---"; ls -la
+          echo "--- terraform/env/dev ---"; ls -la terraform/env/dev || true
