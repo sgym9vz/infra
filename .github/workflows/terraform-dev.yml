@@ -1,5 +1,9 @@
 name: Terraform Pipeline (Plan on push, Apply manual)
 
+concurrency:
+  group: terraform-dev              # 同時実行を禁止（state壊れ防止）
+  cancel-in-progress: false
+
 on:
   push:
     branches: [ main ]                          # mainへのpushで自動Plan
@@ -30,29 +34,13 @@ jobs:
           role-to-assume: arn:aws:iam::585008043652:role/github-actions-deploy-role
           aws-region: ap-northeast-1
 
-      # デバッグ（どのトリガーで動いたか確認）
-      - name: Show trigger
-        run: |
-          echo "event_name=${{ github.event_name }}"
-          echo "ref=${{ github.ref }}"
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+      # 既存tfstateをArtifactsから取得（初回は無くてもOK）
+      - name: Download tfstate artifact (dev)
+        uses: actions/download-artifact@v4
         with:
-          terraform_version: 1.7.5
-
-      - name: Validate TFVARS_DEV_B64 secret
-        run: |
-          set -euo pipefail
-          LEN=$(printf "%s" "${{ secrets.TFVARS_DEV_B64 }}" | wc -c)
-          echo "B64 length: $LEN"
-          if [ "$LEN" -lt 10 ]; then
-            echo "ERROR: TFVARS_DEV_B64 is empty or too short"; exit 1
-          fi
-          # Base64として妥当か？
-          if ! printf "%s" "${{ secrets.TFVARS_DEV_B64 }}" | base64 -d >/dev/null 2>&1; then
-            echo "ERROR: TFVARS_DEV_B64 is not valid base64"; exit 1
-          fi
+          name: terraform-state-dev       # ← 任意だが固定名にする
+          path: terraform/env/dev         # ← working-directory と同じ
+        continue-on-error: true           # 初回は存在しないのでOK
 
       - name: Terraform Init
         run: terraform init -input=false
@@ -66,29 +54,6 @@ jobs:
         run: |
           rm -f dev.auto.tfvars || true
           printf "%s" "${{ secrets.TFVARS_DEV_B64 }}" | base64 -d > dev.auto.tfvars
-
-      # 何が存在して何を読むのか確認
-      - name: Debug tfvars
-        run: |
-          echo "PWD=$(pwd)"
-          echo "== ls *.tfvars* =="
-          ls -la *.tfvars* || true
-          echo "== show dev.auto.tfvars =="
-          sed -n '1,50p' dev.auto.tfvars || true
-          echo "== hex of cidr line =="
-          grep -n '^cidr' -n dev.auto.tfvars | sed -n '1p'
-
-      # 存在/内容/改行/クォート」を可視化
-      - name: Assert tfvars exists and content
-        run: |
-          set -euo pipefail
-          echo "PWD=$(pwd)"
-          echo "Files:"; ls -la
-          echo "tfvars files:"; ls -la *.tfvars* || true
-          echo "---- hexdump first lines (BOM/CRLF検出) ----"
-          head -n 5 dev.auto.tfvars | hexdump -C || true
-          echo "---- show tfvars ----"
-          sed -n '1,50p' dev.auto.tfvars || true
 
       # --- 自動で実行されるのは Plan まで ---
       - name: Terraform Plan
@@ -108,3 +73,15 @@ jobs:
       - name: Terraform Apply (manual only)
         if: github.event_name == 'workflow_dispatch'
         run: terraform apply -auto-approve tfplan
+
+      # tfstate をArtifactsへ保存（存在しない場合は警告のみ）
+      - name: Upload tfstate artifact (dev)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-state-dev
+          path: |
+            terraform/env/dev/terraform.tfstate
+            terraform/env/dev/terraform.tfstate.backup
+          retention-days: 90       # デフォルト90。必要に応じて調整
+          if-no-files-found: warn  # 無ければ警告のみ
