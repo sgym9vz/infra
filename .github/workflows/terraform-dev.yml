@@ -1,13 +1,16 @@
-name: Terraform Pipeline
+name: Terraform Pipeline (Plan on push, Apply manual)
 
 on:
   push:
-    branches: [ main ]      # mainブランチにpushで実行
-    paths: [ 'infra/terraform/**' ]  # Terraform関連の変更時だけ
-  workflow_dispatch:        # 手動実行も可能
+    branches: [ main ]                          # mainへのpushで自動Plan
+    paths:    [ 'infra/terraform/env/dev' ]
+  pull_request:
+    branches: [ main ]                          # PRでもPlan（レビュー用）
+    paths:    [ 'infra/terraform/env/dev' ]
+  workflow_dispatch:                             # 手動実行（Apply用）
 
 permissions:
-  id-token: write           # OIDCで必要
+  id-token: write                                # OIDCに必須
   contents: read
 
 jobs:
@@ -15,19 +18,23 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infra/terraform/env/dev  # Terraformコードの場所
+        working-directory: infra/terraform/env/dev
 
     steps:
       - uses: actions/checkout@v4
 
+      # OIDCでAWS認証
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::585008043652:role/github-actions-deploy-role
           aws-region: ap-northeast-1
 
-      - name: Who am I
-        run: aws sts get-caller-identity
+      # デバッグ（どのトリガーで動いたか確認）
+      - name: Show trigger
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "ref=${{ github.ref }}"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -37,9 +44,18 @@ jobs:
       - name: Terraform Init
         run: terraform init -input=false
 
+      # --- 自動で実行されるのは Plan まで ---
       - name: Terraform Plan
         run: terraform plan -no-color -out=tfplan
 
+      # Plan結果をアーティファクトとして保存
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: tfplan
+          path: tfplan
+
+      # --- Apply は workflow_dispatch で手動実行したときだけ ---
       - name: Terraform Apply (manual only)
         if: github.event_name == 'workflow_dispatch'
         run: terraform apply -auto-approve tfplan
