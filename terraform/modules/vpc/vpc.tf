@@ -23,8 +23,8 @@ resource "aws_internet_gateway" "igw" {
 # Public Subnet（/24など）— Public IP を自動付与
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.this.id
-  cidr_block              = var.public_subnet_cidr[0]
-  availability_zone       = var.availability_zone[0]
+  cidr_block              = var.public_subnet_cidr
+  availability_zone       = var.availability_zone
   map_public_ip_on_launch = true
 
   tags = {
