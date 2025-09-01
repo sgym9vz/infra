@@ -3,10 +3,10 @@ name: Terraform Pipeline (Plan on push, Apply manual)
 on:
   push:
     branches: [ main ]                          # mainへのpushで自動Plan
-    paths:    [ 'infra/terraform/env/dev' ]
+    paths:    [ 'terraform/**' ]
   pull_request:
     branches: [ main ]                          # PRでもPlan（レビュー用）
-    paths:    [ 'infra/terraform/env/dev' ]
+    paths:    [ 'terraform/**' ]
   workflow_dispatch:                             # 手動実行（Apply用）
 
 permissions:
@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: infra/terraform/env/dev
+        working-directory: terraform/env/dev
 
     steps:
       - uses: actions/checkout@v4
