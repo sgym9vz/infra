@@ -1,0 +1,19 @@
+name: Debug Paths
+
+on:
+  workflow_dispatch:   # 手動実行のみ
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show current path and repo tree
+        run: |
+          echo "PWD: $(pwd)"
+          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
+          echo "--- Top level ---"
+          ls -la
+          echo "--- 2 levels ---"
+          find . -maxdepth 2 -type d
