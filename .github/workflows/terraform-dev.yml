@@ -65,12 +65,24 @@ jobs:
           echo "== hex of cidr line =="
           grep -n '^cidr' -n dev.auto.tfvars | sed -n '1p'
 
+      # 存在/内容/改行/クォート」を可視化
+      - name: Assert tfvars exists and content
+        run: |
+          set -euo pipefail
+          echo "PWD=$(pwd)"
+          echo "Files:"; ls -la
+          echo "tfvars files:"; ls -la *.tfvars* || true
+          echo "---- hexdump first lines (BOM/CRLF検出) ----"
+          head -n 5 dev.auto.tfvars | hexdump -C || true
+          echo "---- show tfvars ----"
+          sed -n '1,50p' dev.auto.tfvars || true
+
       # --- 自動で実行されるのは Plan まで ---
       - name: Terraform Plan
         env:
           TF_IN_AUTOMATION: "true"   # CIでの実行を明示
           TF_INPUT: "false"          # 念のため環境変数でも無効化
-        run: terraform plan -input=false -no-color -out=tfplan -var-file=dev.auto.tfvars
+        run: terraform plan -input=false -no-color -out=tfplan -var-file=./dev.auto.tfvars
 
       # Plan結果をアーティファクトとして保存
       - name: Upload plan artifact
