@@ -3,8 +3,8 @@ module "vpc" {
   name        = var.name
   cidr        = var.cidr
   environment = var.environment
-  public_subnet_cidrs = var.public_subnet_cidr
-  availability_zones  = var.availability_zone
+  public_subnet_cidr = var.public_subnet_cidr
+  availability_zone  = var.availability_zone
 }
 
 module "ec2" {
