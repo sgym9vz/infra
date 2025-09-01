@@ -11,7 +11,12 @@ on:
   pull_request:
     branches: [ main ]                          # PRでもPlan（レビュー用）
     paths:    [ 'terraform/**' ]
-  workflow_dispatch:                             # 手動実行（Apply用）
+  workflow_dispatch:
+    inputs:
+      reset_state:
+        description: 'Skip downloading previous tfstate (factory reset)'
+        required: false
+        type: boolean
 
 permissions:
   id-token: write                                # OIDCに必須
@@ -39,13 +44,17 @@ jobs:
         with:
           terraform_version: 1.7.5
 
-      # 既存tfstateをArtifactsから取得（初回は無くてもOK）
       - name: Download tfstate artifact (dev)
+        if: ${{ inputs.reset_state != true }}
         uses: actions/download-artifact@v4
         with:
           name: terraform-state-dev       # ← 任意だが固定名にする
           path: terraform/env/dev         # ← working-directory と同じ
         continue-on-error: true           # 初回は存在しないのでOK
+
+      - name: Clean local tfstate when reset
+        if: ${{ inputs.reset_state == true }}
+        run: rm -f terraform.tfstate terraform.tfstate.backup || true
 
       - name: Terraform Init
         run: terraform init -input=false
