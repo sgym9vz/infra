@@ -8,12 +8,18 @@ concurrency:
 
 on:
   push:
-    branches: [ main ]                          # mainへのpushで自動Plan
+    branches: [ main ]
     paths:    [ 'terraform/**' ]
   pull_request:
-    branches: [ main ]                          # PRでもPlan（レビュー用）
+    branches: [ main ]
     paths:    [ 'terraform/**' ]
   workflow_dispatch:
+    inputs:
+      do_apply:
+        description: 'Run terraform apply (手動時のみ適用)'
+        required: false
+        type: boolean
+        default: false   # 既定は Plan のみ
 
 permissions:
   id-token: write                                # OIDCに必須
@@ -81,7 +87,7 @@ jobs:
 
       # Applyはworkflow_dispatchで手動実行したときのみ実行
       - name: Terraform Apply (manual only)
-        if: github.event_name == 'workflow_dispatch'
+        if: ${{ inputs.do_apply == true }}
         run: terraform apply -auto-approve tfplan
 
       # tfstateをアーティファクトとして保存（存在しない場合は警告のみ）
