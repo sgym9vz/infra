@@ -3,10 +3,13 @@
 *.pem
 *.key
 
-# Terraform 実行環境関連
-**/.terraform/           # provider バイナリやキャッシュ（超大きいので必ず無視）
-**/*.tfstate             # state ファイル（機微情報入り）
-**/*.tfstate.*           # state のバックアップ
-**/*.tfplan              # plan ファイル（使い捨て）
-**/*.tfvars              # 環境ごとの秘密変数
-!**/*.tfvars.example     # サンプルだけは共有
+# Terraform 関連の生成物
+**/.terraform/
+**/.terraform.lock.hcl
+**/*.tfstate
+**/*.tfstate.*
+**/*.tfplan
+
+# 環境変数ファイル
+**/*.tfvars
+!**/*.tfvars.example
