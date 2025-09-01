@@ -41,13 +41,28 @@ jobs:
         with:
           terraform_version: 1.7.5
 
-      # tfvars をその場で生成
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      # 余計な tfvars を消してから毎回作り直す
+      - name: Clean previous tfvars
+        run: rm -f *.tfvars *.auto.tfvars || true
+
+      # dev.auto.tfvars を作成（今のやり方のまま）
       - name: Write tfvars from secret (dev)
         run: |
           printf "%s" "${{ secrets.TFVARS_DEV }}" > dev.auto.tfvars
 
-      - name: Terraform Init
-        run: terraform init -input=false
+      # 何が存在して何を読むのか確認
+      - name: Debug tfvars
+        run: |
+          echo "PWD=$(pwd)"
+          echo "== ls *.tfvars* =="
+          ls -la *.tfvars* || true
+          echo "== show dev.auto.tfvars =="
+          sed -n '1,50p' dev.auto.tfvars || true
+          echo "== hex of cidr line =="
+          grep -n '^cidr' -n dev.auto.tfvars | sed -n '1p'
 
       # --- 自動で実行されるのは Plan まで ---
       - name: Terraform Plan
