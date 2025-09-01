@@ -48,10 +48,11 @@ jobs:
       - name: Clean previous tfvars
         run: rm -f *.tfvars *.auto.tfvars || true
 
-      # dev.auto.tfvars を作成（今のやり方のまま）
-      - name: Write tfvars from secret (dev)
+      # dev.auto.tfvars を作成（base64デコード版）
+      - name: Write tfvars from secret (dev, base64)
         run: |
-          printf "%s" "${{ secrets.TFVARS_DEV }}" > dev.auto.tfvars
+          rm -f dev.auto.tfvars || true
+          printf "%s" "${{ secrets.TFVARS_DEV_B64 }}" | base64 -d > dev.auto.tfvars
 
       # 何が存在して何を読むのか確認
       - name: Debug tfvars
