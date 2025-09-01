@@ -16,6 +16,9 @@ jobs:
       - name: Remove local tfstate
         run: rm -f terraform.tfstate terraform.tfstate.backup || true
 
+      - name: Check local tfstate deleted
+        run: ls -la terraform*.tfstate* || echo "No tfstate files found"
+
       - name: Remove previous state artifact
         uses: actions/upload-artifact@v4
         with:
