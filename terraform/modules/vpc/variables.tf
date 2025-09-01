@@ -24,3 +24,13 @@ variable "enable_dns_support" {
   type        = bool
   default     = true
 }
+
+variable "public_subnet_cidr" {
+  description = "CIDR block for the public subnet"
+  type        = list(string)
+}
+
+variable "availability_zone" {
+  description = "Availability Zone for the public subnet (e.g., ap-northeast-1a)"
+  type        = list(string)
+}

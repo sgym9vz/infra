@@ -12,3 +12,15 @@ output "cidr_block" {
   value       = aws_vpc.this.cidr_block
   description = "The CIDR block of the VPC"
 }
+
+output "public_subnet_id" {
+  value = aws_subnet.public.id
+}
+
+output "igw_id" {
+  value = aws_internet_gateway.igw.id
+}
+
+output "public_route_table_id" {
+  value = aws_route_table.public.id
+}
