@@ -41,6 +41,19 @@ jobs:
         with:
           terraform_version: 1.7.5
 
+      - name: Validate TFVARS_DEV_B64 secret
+        run: |
+          set -euo pipefail
+          LEN=$(printf "%s" "${{ secrets.TFVARS_DEV_B64 }}" | wc -c)
+          echo "B64 length: $LEN"
+          if [ "$LEN" -lt 10 ]; then
+            echo "ERROR: TFVARS_DEV_B64 is empty or too short"; exit 1
+          fi
+          # Base64として妥当か？
+          if ! printf "%s" "${{ secrets.TFVARS_DEV_B64 }}" | base64 -d >/dev/null 2>&1; then
+            echo "ERROR: TFVARS_DEV_B64 is not valid base64"; exit 1
+          fi
+
       - name: Terraform Init
         run: terraform init -input=false
 
