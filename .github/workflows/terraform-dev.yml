@@ -67,7 +67,10 @@ jobs:
 
       # --- 自動で実行されるのは Plan まで ---
       - name: Terraform Plan
-        run: terraform plan -no-color -out=tfplan
+        env:
+          TF_IN_AUTOMATION: "true"   # CIでの実行を明示
+          TF_INPUT: "false"          # 念のため環境変数でも無効化
+        run: terraform plan -input=false -no-color -out=tfplan -var-file=dev.auto.tfvars
 
       # Plan結果をアーティファクトとして保存
       - name: Upload plan artifact
