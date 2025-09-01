@@ -1,10 +1,5 @@
-# 環境ファイル
 .env
-
-# macOS 系の隠しファイル
 .DS_Store
-
-# 秘密鍵
 *.pem
 *.key
 
