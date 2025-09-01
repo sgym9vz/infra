@@ -33,3 +33,4 @@ variable "public_subnet_cidr" {
 variable "availability_zone" {
   description = "Availability Zone for the public subnet (e.g., ap-northeast-1a)"
   type        = string
+}
