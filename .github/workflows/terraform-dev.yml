@@ -41,6 +41,11 @@ jobs:
         with:
           terraform_version: 1.7.5
 
+      # tfvars をその場で生成
+      - name: Write tfvars from secret (dev)
+        run: |
+          printf "%s" "${{ secrets.TFVARS_DEV }}" > dev.auto.tfvars
+
       - name: Terraform Init
         run: terraform init -input=false
 
